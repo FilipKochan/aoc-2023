@@ -65,25 +65,46 @@ fn parse_lines(mut lines: impl Iterator<Item = String>) -> Data {
 }
 
 
-fn find_location(seed: i64, maps: &Vec<HashSet<Boundary>>) -> i64 {
+fn find_location(seed: i64, maps: &Vec<HashSet<Boundary>>) -> (i64, Option<i64>) {
     let mut id = seed;
+
+    let mut same_count = None;
 
     for map in maps {
         for boundary in map {
             let offset = id - boundary.src;
 
+            if offset < 0 {
+                let count_to_start = -offset;
+                if let Some(b) = same_count {
+                    if count_to_start < b {
+                        same_count = Some(count_to_start);
+                    }
+                }
+            }
+
             if offset >= 0 && offset < boundary.range {
                 id = boundary.dst + offset;
+
+                let count_till_end = boundary.range - offset;
+
+                if let Some(b) = same_count {
+                    if count_till_end < b {
+                        same_count = Some(count_till_end)
+                    }
+                } else {
+                    same_count = Some(count_till_end);
+                }
                 break;
             }
         }
     }
 
-    id
+    (id, same_count)
 }
 
 fn part1(data: &Data) -> i64 {
-    data.seeds.iter().map(|seed| find_location(*seed, &data.maps)).min().unwrap()
+    data.seeds.iter().map(|seed| find_location(*seed, &data.maps)).min().unwrap().0
 }
 
 fn part2(data: &Data) -> i64 {
@@ -91,8 +112,9 @@ fn part2(data: &Data) -> i64 {
         let start = chunk[0];
         let len = chunk[1];
         let mut lowest = None;
-        for i in start..(start + len) {
-            let location = find_location(i, &data.maps);
+        let mut i = start;
+        while i < start + len {
+            let (location, can_skip) = find_location(i, &data.maps);
 
             if let Some(lowest_) = lowest {
                 if location < lowest_ {
@@ -101,6 +123,8 @@ fn part2(data: &Data) -> i64 {
             } else {
                 lowest = Some(location);
             }
+
+            i += can_skip.unwrap_or(1);
         }
         lowest.unwrap()
     })
