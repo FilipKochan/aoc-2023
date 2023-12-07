@@ -1,9 +1,9 @@
 use std::{
     collections::{HashMap, HashSet},
-    env::args,
-    fs::File,
-    io::{self, BufRead, BufReader, Error},
+    io::{self},
 };
+
+use rust_base::aoc::Parser;
 
 #[derive(Clone, Debug)]
 struct Hand {
@@ -51,9 +51,7 @@ fn get_combination(card: HashMap<char, i32>) -> Combination {
         return Combination::Four;
     }
 
-    card.values()
-        .fold(1, |acc, e| ((acc) * (*e)))
-        .into()
+    card.values().fold(1, |acc, e| ((acc) * (*e))).into()
 }
 
 fn occurences_map(cards: Vec<char>) -> HashMap<char, i32> {
@@ -181,18 +179,9 @@ fn part(p: i32, mut hands: Vec<Hand>) -> i32 {
 }
 
 fn main() -> io::Result<()> {
-    if let Some(name) = args().nth(1) {
-        let file = BufReader::new(File::open(name)?);
-        let parsed_lines: Vec<Hand> = file.lines().flatten().map(|v| v.into()).collect();
-
-        println!("Part 1: {}", part(1, parsed_lines.clone()));
-        println!("Part 2: {}", part(2, parsed_lines));
-    } else {
-        return Err(Error::new(
-            io::ErrorKind::InvalidInput,
-            "input file not provided",
-        ));
-    }
-
+    let parser = Parser::new();
+    let parsed_lines = parser.parse_by_lines::<Hand>(|v| v.into());
+    println!("Part 1: {}", part(1, parsed_lines.clone()));
+    println!("Part 2: {}", part(2, parsed_lines));
     Ok(())
 }
